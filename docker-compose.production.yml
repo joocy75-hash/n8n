@@ -1,0 +1,27 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: groupe-n8n
+    restart: always
+    environment:
+      - N8N_HOST=n8n.deepsignal.shop
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://n8n.deepsignal.shop/
+      - GENERIC_TIMEZONE=Asia/Seoul
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - group_e_network
+      - proxy-net
+
+volumes:
+  n8n_data:
+
+
+networks:
+  group_e_network:
+    driver: bridge
+  proxy-net:
+    external: true
