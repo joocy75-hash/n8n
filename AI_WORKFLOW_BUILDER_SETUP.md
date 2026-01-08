@@ -260,4 +260,4 @@ docker exec groupe-n8n curl -s https://api.anthropic.com/v1/messages \
 
 - **이미지**: `ghcr.io/joocy75-hash/n8n:latest`
 - **포트**: 5678
-- **URL**: `http://n8n.deepsignal.shop/`
+- **URL**: `http://141.164.55.245/` (또는 설정된 도메인)
