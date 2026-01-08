@@ -261,3 +261,52 @@ docker exec groupe-n8n curl -s https://api.anthropic.com/v1/messages \
 - **이미지**: `ghcr.io/joocy75-hash/n8n:latest`
 - **포트**: 5678
 - **URL**: `http://141.164.55.245/` (또는 설정된 도메인)
+
+## 운영 환경 동기화 및 유지보수 가이드
+
+현재 로컬 개발 환경, GitHub 저장소, 원격 서버는 모두 최신 상태로 동기화되어 있습니다. 다른 작업자가 코드를 수정하거나 환경을 변경할 때 다음 사항을 반드시 준수해야 합니다.
+
+### 1. 환경 동기화 구조
+
+- **로컬 (Local)**: `master` 브랜치에서 작업 후 GitHub로 푸시합니다.
+- **GitHub**: `master` 브랜치에 푸시되면 GitHub Actions가 자동으로 실행되어 커스텀 Docker 이미지를 빌드하고 GHCR(`ghcr.io`)에 푸시합니다.
+- **원격 서버 (Remote)**: GitHub Actions의 `deploy` 단계가 성공하면 원격 서버에 접속하여 최신 이미지를 풀(pull)하고 컨테이너를 재시작합니다.
+
+### 2. 주요 설정 파일 및 주의사항
+
+#### Docker Compose (`docker-compose.production.yml`)
+
+- **`N8N_SECURE_COOKIE=false`**: 현재 HTTPS가 아닌 IP 주소로 접속 중이므로, 이 설정이 `true`이거나 누락되면 로그인이 불가능합니다. 도메인 및 SSL(HTTPS) 적용 전까지는 `false`를 유지해야 합니다.
+- **`NODE_OPTIONS=--dns-result-order=ipv4first`**: 원격 서버의 IPv6 연결 문제를 방지하기 위해 필수적인 설정입니다. 삭제 시 LLM 연결 오류(`fetch failed`)가 발생할 수 있습니다.
+- **`dns` 설정**: 컨테이너 내부에서 Anthropic API 도메인 해석을 위해 Google DNS(`8.8.8.8`)를 명시적으로 사용합니다.
+
+#### GitHub Secrets
+
+CI/CD 파이프라인이 정상 작동하려면 다음 Secrets가 GitHub에 등록되어 있어야 합니다:
+
+- `N8N_AI_ANTHROPIC_KEY`: AI 기능을 위한 API 키
+- `REMOTE_HOST`: 원격 서버 IP (`141.164.55.245`)
+- `REMOTE_USER`: 접속 계정 (`root`)
+- `REMOTE_PASSWORD`: 접속 비밀번호
+
+### 3. 코드 수정 시 프로세스
+
+1. 로컬에서 코드 수정 및 테스트
+2. `git commit` (필요 시 `--no-verify`로 lint 체크 우회 가능)
+3. `git push origin master`
+4. GitHub Actions의 **Actions** 탭에서 빌드 및 배포 상태 모니터링
+5. 배포 실패 시, 서버에 직접 접속하여 `docker compose pull && docker compose up -d`로 수동 배포 가능
+
+### 4. 서버 수동 관리 (필요 시)
+
+서버의 n8n 설정 경로는 `/root/group_e/`입니다.
+
+```bash
+cd /root/group_e/
+# 설정 변경 후 반영
+docker compose -f docker-compose.production.yml up -d
+# 로그 확인
+docker logs groupe-n8n --tail 100 -f
+```
+
+이 가이드를 준수하여 운영 환경의 일관성을 유지해 주시기 바랍니다.
