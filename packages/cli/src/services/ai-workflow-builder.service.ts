@@ -81,7 +81,7 @@ export class WorkflowBuilderService {
 
 			this.service = new AiWorkflowBuilderService(
 				nodeTypeDescriptions,
-				this.client,
+				process.env.N8N_AI_ANTHROPIC_KEY ? undefined : this.client,
 				this.logger,
 				this.instanceSettings.instanceId,
 				this.urlService.getInstanceBaseUrl(),

@@ -250,6 +250,20 @@ export class License implements LicenseProvider {
 	}
 
 	isLicensed(feature: BooleanLicenseFeature) {
+		if (process.env.N8N_AI_ENABLED === 'true') {
+			if (
+				(
+					[
+						LICENSE_FEATURES.AI_ASSISTANT,
+						LICENSE_FEATURES.AI_BUILDER,
+						LICENSE_FEATURES.ASK_AI,
+						LICENSE_FEATURES.AI_CREDITS,
+					] as BooleanLicenseFeature[]
+				).includes(feature)
+			) {
+				return true;
+			}
+		}
 		return this.manager?.hasFeatureEnabled(feature) ?? false;
 	}
 
@@ -431,6 +445,9 @@ export class License implements LicenseProvider {
 
 	/** @deprecated Use `LicenseState` instead. */
 	getAiCredits() {
+		if (process.env.N8N_AI_ENABLED === 'true') {
+			return UNLIMITED_LICENSE_QUOTA;
+		}
 		return this.getValue(LICENSE_QUOTAS.AI_CREDITS) ?? 0;
 	}
 

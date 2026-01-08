@@ -1,6 +1,6 @@
 services:
   n8n:
-    image: n8nio/n8n:latest
+    image: ghcr.io/joocy75-hash/n8n:latest
     container_name: groupe-n8n
     restart: always
     environment:
@@ -10,6 +10,10 @@ services:
       - NODE_ENV=production
       - WEBHOOK_URL=http://n8n.deepsignal.shop/
       - GENERIC_TIMEZONE=Asia/Seoul
+      - N8N_AI_ENABLED=true
+      - N8N_AI_ASSISTANT_ENABLED=true
+      - N8N_AI_ASSISTANT_BASE_URL=https://assistant.n8n.io
+      - N8N_AI_ANTHROPIC_KEY=${N8N_AI_ANTHROPIC_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
@@ -18,7 +22,6 @@ services:
 
 volumes:
   n8n_data:
-
 
 networks:
   group_e_network:

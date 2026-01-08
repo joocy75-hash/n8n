@@ -15,5 +15,8 @@
     "./tsconfig.frontend.json": "./tsconfig.frontend.json",
     "./*": "./*"
   },
-  "license": "See LICENSE.md file in the root of the repository"
+  "license": "See LICENSE.md file in the root of the repository",
+  "devDependencies": {
+    "jest-expect-message": "^1.1.3"
+  }
 }

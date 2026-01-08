@@ -3,7 +3,7 @@ services:
     image: n8nio/n8n:latest
     restart: always
     ports:
-      - "5678:5678"
+      - '5678:5678'
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678
@@ -11,6 +11,11 @@ services:
       - NODE_ENV=production
       - WEBHOOK_URL=http://localhost:5678/
       - GENERIC_TIMEZONE=Asia/Seoul
+      # AI Workflow Builder 활성화를 위한 핵심 설정
+      - N8N_AI_ENABLED=true
+      - N8N_AI_ASSISTANT_ENABLED=true
+      - N8N_AI_ASSISTANT_BASE_URL=https://assistant.n8n.io
+      - N8N_AI_ANTHROPIC_KEY=${N8N_AI_ANTHROPIC_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
 
