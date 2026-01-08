@@ -205,6 +205,16 @@ docker exec groupe-n8n curl -s https://api.anthropic.com/v1/messages \
 `fetch failed` 오류가 나면 네트워크 연결 문제입니다.
 
 
+#### 6단계: 404 MODEL_NOT_FOUND 오류 확인
+
+`404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-4-5-sonnet-20250228"}}`와 같은 오류가 발생하면, n8n 코드 내부에 설정된 모델 이름이 유효하지 않은 경우입니다.
+
+**해결 방법:**
+
+1. `packages/@n8n/ai-workflow-builder.ee/src/llm-config.ts` 파일에서 모델 이름을 현재 유효한 모델(예: `claude-3-5-sonnet-20241022`)로 수정해야 합니다.
+2. 수정 후 코드를 커밋하고 GitHub에 푸시하여 자동 배포를 트리거하세요.
+3. 배포가 완료되면 서버에서 최신 이미지가 실행되면서 문제가 해결됩니다.
+
 ## 코드 동작 원리
 
 1. **라이선스 체크** (`packages/cli/src/license.ts`):

@@ -12,7 +12,7 @@ interface LLMProviderConfig {
 export const o4mini = async (config: LLMProviderConfig) => {
 	const { ChatOpenAI } = await import('@langchain/openai');
 	return new ChatOpenAI({
-		model: 'o4-mini-2025-04-16',
+		model: 'gpt-4o-mini',
 		apiKey: config.apiKey,
 		configuration: {
 			baseURL: config.baseUrl,
@@ -27,7 +27,7 @@ export const o4mini = async (config: LLMProviderConfig) => {
 export const gpt41mini = async (config: LLMProviderConfig) => {
 	const { ChatOpenAI } = await import('@langchain/openai');
 	return new ChatOpenAI({
-		model: 'gpt-4.1-mini-2025-04-14',
+		model: 'gpt-4o-mini',
 		apiKey: config.apiKey,
 		temperature: 0,
 		maxTokens: -1,
@@ -44,7 +44,7 @@ export const gpt41mini = async (config: LLMProviderConfig) => {
 export const gpt41 = async (config: LLMProviderConfig) => {
 	const { ChatOpenAI } = await import('@langchain/openai');
 	return new ChatOpenAI({
-		model: 'gpt-4.1-2025-04-14',
+		model: 'gpt-4o',
 		apiKey: config.apiKey,
 		temperature: 0.3,
 		maxTokens: -1,
@@ -61,7 +61,7 @@ export const gpt41 = async (config: LLMProviderConfig) => {
 export const anthropicClaudeSonnet45 = async (config: LLMProviderConfig) => {
 	const { ChatAnthropic } = await import('@langchain/anthropic');
 	const model = new ChatAnthropic({
-		model: 'claude-4-5-sonnet-20250228',
+		model: 'claude-3-5-sonnet-20241022',
 		apiKey: config.apiKey,
 		temperature: 0,
 		maxTokens: MAX_OUTPUT_TOKENS,
@@ -74,7 +74,7 @@ export const anthropicClaudeSonnet45 = async (config: LLMProviderConfig) => {
 		},
 	});
 
-	// Remove Langchain default topP parameter since Sonnet 4.5 doesn't allow setting both temperature and topP
+	// Remove Langchain default topP parameter since Sonnet 3.5 doesn't allow setting both temperature and topP
 	delete model.topP;
 
 	return model;
@@ -83,7 +83,7 @@ export const anthropicClaudeSonnet45 = async (config: LLMProviderConfig) => {
 export const anthropicHaiku45 = async (config: LLMProviderConfig) => {
 	const { ChatAnthropic } = await import('@langchain/anthropic');
 	const model = new ChatAnthropic({
-		model: 'claude-haiku-4-5-20251001',
+		model: 'claude-3-5-haiku-20241022',
 		apiKey: config.apiKey,
 		temperature: 0,
 		maxTokens: MAX_OUTPUT_TOKENS,
@@ -96,7 +96,7 @@ export const anthropicHaiku45 = async (config: LLMProviderConfig) => {
 		},
 	});
 
-	// Remove Langchain default topP parameter since Sonnet 4.5 doesn't allow setting both temperature and topP
+	// Remove Langchain default topP parameter since Sonnet 3.5 doesn't allow setting both temperature and topP
 	delete model.topP;
 
 	return model;
