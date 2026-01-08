@@ -61,7 +61,7 @@ export const gpt41 = async (config: LLMProviderConfig) => {
 export const anthropicClaudeSonnet45 = async (config: LLMProviderConfig) => {
 	const { ChatAnthropic } = await import('@langchain/anthropic');
 	const model = new ChatAnthropic({
-		model: 'claude-sonnet-4-5',
+		model: 'claude-4-5-sonnet-20250228',
 		apiKey: config.apiKey,
 		temperature: 0,
 		maxTokens: MAX_OUTPUT_TOKENS,
