@@ -15,6 +15,7 @@ services:
       - N8N_PROTOCOL=http
       - NODE_ENV=production
       - WEBHOOK_URL=http://141.164.55.245/
+      - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Asia/Seoul
       # AI Workflow Builder 설정
       # N8N_AI_ENABLED=true: 라이선스 체크를 우회하여 AI 기능 활성화
