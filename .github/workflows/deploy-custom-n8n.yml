@@ -68,6 +68,42 @@ jobs:
           password: ${{ secrets.REMOTE_PASSWORD }}
           script: |
             cd /root/group_e/
+
+            # 환경변수 설정
             echo "N8N_AI_ANTHROPIC_KEY=${{ secrets.N8N_AI_ANTHROPIC_KEY }}" > .env
-            docker compose pull
-            docker compose up -d --force-recreate
+
+            # API 키 설정 확인 (마스킹된 출력)
+            if [ -z "${{ secrets.N8N_AI_ANTHROPIC_KEY }}" ]; then
+              echo "⚠️ WARNING: N8N_AI_ANTHROPIC_KEY is not set!"
+            else
+              echo "✅ N8N_AI_ANTHROPIC_KEY is configured (length: ${#N8N_AI_ANTHROPIC_KEY})"
+            fi
+
+            # Anthropic API 연결 테스트 (DNS 해석 확인)
+            echo "🔍 Testing network connectivity to Anthropic API..."
+            if curl -sI --connect-timeout 10 https://api.anthropic.com > /dev/null 2>&1; then
+              echo "✅ Network connectivity to api.anthropic.com: OK"
+            else
+              echo "⚠️ WARNING: Cannot reach api.anthropic.com - checking DNS..."
+              nslookup api.anthropic.com || echo "DNS lookup failed"
+            fi
+
+            # 기존 컨테이너 로그 저장 (디버깅용)
+            docker logs groupe-n8n --tail 50 2>/dev/null || echo "No existing container logs"
+
+            # 배포 실행
+            echo "🚀 Pulling latest image..."
+            docker compose -f docker-compose.production.yml pull
+
+            echo "🔄 Recreating container..."
+            docker compose -f docker-compose.production.yml up -d --force-recreate
+
+            # 컨테이너 시작 대기 및 상태 확인
+            echo "⏳ Waiting for container to start..."
+            sleep 10
+
+            echo "📊 Container status:"
+            docker ps | grep groupe-n8n
+
+            echo "📜 Recent container logs:"
+            docker logs groupe-n8n --tail 30 2>&1

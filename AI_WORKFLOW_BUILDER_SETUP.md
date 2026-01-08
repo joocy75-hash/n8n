@@ -119,6 +119,45 @@ AI Workflow Builder가 성공적으로 활성화되면:
 
 3. **캐시 클리어**: 브라우저 캐시를 클리어하고 새로고침하세요.
 
+### Failed to connect to LLM Provider: fetch failed
+
+원격 서버에서 AI Workflow Builder 사용 시 이 오류가 발생하면:
+
+1. **환경변수 확인**: `N8N_AI_ANTHROPIC_KEY`가 올바르게 설정되었는지 확인
+   ```bash
+   # 서버에서 확인
+   cat /root/group_e/.env
+   docker exec groupe-n8n env | grep N8N_AI
+   ```
+
+2. **네트워크 연결 확인**: Docker 컨테이너 내부에서 Anthropic API에 접근 가능한지 확인
+   ```bash
+   # 컨테이너 내부에서 DNS 해석 테스트
+   docker exec groupe-n8n nslookup api.anthropic.com
+
+   # 컨테이너 내부에서 연결 테스트
+   docker exec groupe-n8n curl -sI https://api.anthropic.com
+   ```
+
+3. **DNS 설정 확인**: `docker-compose.production.yml`에 Google DNS가 설정되어 있는지 확인
+   ```yaml
+   dns:
+     - 8.8.8.8
+     - 8.8.4.4
+   ```
+
+4. **IPv6 문제**: Node.js가 IPv4를 우선 사용하도록 설정되어 있는지 확인
+   ```yaml
+   environment:
+     - NODE_OPTIONS=--dns-result-order=ipv4first
+   ```
+
+5. **콘테이너 로그 확인**:
+   ```bash
+   docker logs groupe-n8n --tail 100
+   ```
+
+
 ## 코드 동작 원리
 
 1. **라이선스 체크** (`packages/cli/src/license.ts`):
