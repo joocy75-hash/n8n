@@ -3,10 +3,11 @@
 > ⚠️ **Node.js 버전 요구사항**: n8n은 Node.js v20.19 ~ v24.x를 요구합니다.
 > 현재 Node.js 버전이 호환되지 않으면 `nvm`을 사용하여 버전을 전환하세요:
 >
-> ```bash
-> nvm install 20
-> nvm use 20
-> ```
+>
+```bash
+nvm install 20
+nvm use 20
+```
 
 이 문서는 n8n의 AI Workflow Builder(Ask & Build) 기능을 로컬 개발 환경에서 활성화하는 방법을 설명합니다.
 
@@ -57,7 +58,7 @@ export N8N_AI_ANTHROPIC_KEY="your_anthropic_api_key_here"
 pnpm run dev
 
 # 또는 한 줄로
-N8N_AI_ENABLED=true N8N_AI_ANTHROPIC_KEY="your_key" pnpm run dev
+N8N_AI_ANTHROPIC_KEY="your_anthropic_api_key_here" pnpm run dev
 ```
 
 ### 방법 3: Docker Compose 사용
@@ -70,7 +71,7 @@ services:
     image: n8nio/n8n:latest
     environment:
       - N8N_AI_ENABLED=true
-      - N8N_AI_ANTHROPIC_KEY=your_key_here
+      - N8N_AI_ANTHROPIC_KEY=your_anthropic_api_key_here
       - N8N_AI_ASSISTANT_BASE_URL=https://assistant.n8n.io
 ```
 
