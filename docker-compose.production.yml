@@ -4,10 +4,12 @@ services:
     container_name: groupe-n8n
     restart: always
     # DNS 설정 - 외부 API (Anthropic) 연결을 위해 Google DNS 사용
+    # Docker 기본 DNS가 외부 도메인을 해석하지 못하는 문제 방지
     dns:
       - 8.8.8.8
       - 8.8.4.4
     environment:
+      # n8n 기본 설정
       - N8N_HOST=n8n.deepsignal.shop
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
@@ -15,11 +17,13 @@ services:
       - WEBHOOK_URL=http://n8n.deepsignal.shop/
       - GENERIC_TIMEZONE=Asia/Seoul
       # AI Workflow Builder 설정
+      # N8N_AI_ENABLED=true: 라이선스 체크를 우회하여 AI 기능 활성화
       - N8N_AI_ENABLED=true
-      - N8N_AI_ASSISTANT_ENABLED=true
-      # Anthropic API 직접 사용 (n8n Cloud 서비스 우회)
+      # Anthropic Claude API 키 - .env 파일에서 로드
+      # 이 키가 없으면 "Failed to connect to LLM Provider" 오류 발생
       - N8N_AI_ANTHROPIC_KEY=${N8N_AI_ANTHROPIC_KEY}
       # Node.js 네트워크 설정 - IPv4 우선 사용으로 연결 안정성 향상
+      # 일부 환경에서 IPv6 연결 문제 방지
       - NODE_OPTIONS=--dns-result-order=ipv4first
     volumes:
       - n8n_data:/home/node/.n8n

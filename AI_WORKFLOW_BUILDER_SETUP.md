@@ -121,41 +121,88 @@ AI Workflow Builder가 성공적으로 활성화되면:
 
 ### Failed to connect to LLM Provider: fetch failed
 
-원격 서버에서 AI Workflow Builder 사용 시 이 오류가 발생하면:
+원격 서버에서 AI Workflow Builder 사용 시 이 오류가 발생하면 다음 단계별로 확인하세요:
 
-1. **환경변수 확인**: `N8N_AI_ANTHROPIC_KEY`가 올바르게 설정되었는지 확인
-   ```bash
-   # 서버에서 확인
-   cat /root/group_e/.env
-   docker exec groupe-n8n env | grep N8N_AI
-   ```
+#### 1단계: API 키 설정 확인
 
-2. **네트워크 연결 확인**: Docker 컨테이너 내부에서 Anthropic API에 접근 가능한지 확인
-   ```bash
-   # 컨테이너 내부에서 DNS 해석 테스트
-   docker exec groupe-n8n nslookup api.anthropic.com
+```bash
+# 서버의 .env 파일 확인
+cat /root/group_e/.env
 
-   # 컨테이너 내부에서 연결 테스트
-   docker exec groupe-n8n curl -sI https://api.anthropic.com
-   ```
+# 컨테이너 내부 환경변수 확인
+docker exec groupe-n8n printenv N8N_AI_ANTHROPIC_KEY
 
-3. **DNS 설정 확인**: `docker-compose.production.yml`에 Google DNS가 설정되어 있는지 확인
-   ```yaml
-   dns:
-     - 8.8.8.8
-     - 8.8.4.4
-   ```
+# API 키 형식 확인 (sk-ant-api03-... 형태여야 함)
+docker exec groupe-n8n printenv | grep N8N_AI
+```
 
-4. **IPv6 문제**: Node.js가 IPv4를 우선 사용하도록 설정되어 있는지 확인
-   ```yaml
-   environment:
-     - NODE_OPTIONS=--dns-result-order=ipv4first
-   ```
+**일반적인 문제:**
 
-5. **콘테이너 로그 확인**:
-   ```bash
-   docker logs groupe-n8n --tail 100
-   ```
+- GitHub Secrets에 `N8N_AI_ANTHROPIC_KEY`가 설정되지 않음
+- API 키 형식이 잘못됨 (앞뒤 공백, 줄바꿈 문자 포함)
+- `.env` 파일이 제대로 생성되지 않음
+
+#### 2단계: 네트워크 연결 확인
+
+```bash
+# 호스트에서 DNS 해석 테스트
+nslookup api.anthropic.com
+
+# 호스트에서 HTTPS 연결 테스트
+curl -sI https://api.anthropic.com
+
+# 컨테이너 내부에서 DNS 해석 테스트
+docker exec groupe-n8n nslookup api.anthropic.com
+
+# 컨테이너 내부에서 HTTPS 연결 테스트
+docker exec groupe-n8n curl -sI https://api.anthropic.com
+```
+
+**일반적인 문제:**
+
+- Docker 기본 DNS가 외부 도메인 해석 실패 → `dns` 설정 필요
+- 방화벽이 아웃바운드 HTTPS (443포트) 차단
+- IPv6 연결 문제 → `NODE_OPTIONS=--dns-result-order=ipv4first` 필요
+
+#### 3단계: Docker 설정 확인
+
+```yaml
+# docker-compose.production.yml에 다음이 포함되어야 함:
+dns:
+  - 8.8.8.8
+  - 8.8.4.4
+environment:
+  - N8N_AI_ENABLED=true
+  - N8N_AI_ANTHROPIC_KEY=${N8N_AI_ANTHROPIC_KEY}
+  - NODE_OPTIONS=--dns-result-order=ipv4first
+```
+
+#### 4단계: 콘테이너 로그 확인
+
+```bash
+# 최근 로그 확인
+docker logs groupe-n8n --tail 100
+
+# 실시간 로그 모니터링
+docker logs groupe-n8n -f
+
+# AI 관련 오류만 필터링
+docker logs groupe-n8n 2>&1 | grep -i "llm\|anthropic\|ai"
+```
+
+#### 5단계: 수동 API 테스트
+
+```bash
+# 컨테이너 내부에서 Anthropic API 직접 테스트
+docker exec groupe-n8n curl -s https://api.anthropic.com/v1/messages \
+  -H "x-api-key: $(docker exec groupe-n8n printenv N8N_AI_ANTHROPIC_KEY)" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d '{"model":"claude-3-haiku-20240307","max_tokens":10,"messages":[{"role":"user","content":"Hi"}]}'
+```
+
+응답이 오면 API 키와 네트워크가 정상이며, n8n 내부 문제일 수 있습니다.
+`fetch failed` 오류가 나면 네트워크 연결 문제입니다.
 
 
 ## 코드 동작 원리

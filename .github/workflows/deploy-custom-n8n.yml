@@ -67,43 +67,135 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           password: ${{ secrets.REMOTE_PASSWORD }}
           script: |
+            set -e
             cd /root/group_e/
 
-            # 환경변수 설정
-            echo "N8N_AI_ANTHROPIC_KEY=${{ secrets.N8N_AI_ANTHROPIC_KEY }}" > .env
+            echo "=========================================="
+            echo "🚀 n8n AI Workflow Builder Deployment"
+            echo "=========================================="
+
+            # 환경변수 파일 생성
+            echo "📝 Creating .env file..."
+            cat > .env << 'EOF'
+            N8N_AI_ANTHROPIC_KEY=${{ secrets.N8N_AI_ANTHROPIC_KEY }}
+            EOF
 
             # API 키 설정 확인 (마스킹된 출력)
-            if [ -z "${{ secrets.N8N_AI_ANTHROPIC_KEY }}" ]; then
-              echo "⚠️ WARNING: N8N_AI_ANTHROPIC_KEY is not set!"
+            echo ""
+            echo "🔑 Checking API Key configuration..."
+            API_KEY="${{ secrets.N8N_AI_ANTHROPIC_KEY }}"
+            if [ -z "$API_KEY" ]; then
+              echo "❌ ERROR: N8N_AI_ANTHROPIC_KEY is NOT set in GitHub Secrets!"
+              echo "   Please add the Anthropic API key in repository Settings > Secrets > Actions"
+              exit 1
             else
-              echo "✅ N8N_AI_ANTHROPIC_KEY is configured (length: ${#N8N_AI_ANTHROPIC_KEY})"
+              KEY_LENGTH=${#API_KEY}
+              KEY_PREFIX="${API_KEY:0:10}"
+              echo "✅ N8N_AI_ANTHROPIC_KEY is configured"
+              echo "   - Length: $KEY_LENGTH characters"
+              echo "   - Prefix: ${KEY_PREFIX}..."
             fi
 
-            # Anthropic API 연결 테스트 (DNS 해석 확인)
-            echo "🔍 Testing network connectivity to Anthropic API..."
-            if curl -sI --connect-timeout 10 https://api.anthropic.com > /dev/null 2>&1; then
-              echo "✅ Network connectivity to api.anthropic.com: OK"
+            # .env 파일 검증
+            echo ""
+            echo "📋 Verifying .env file..."
+            if grep -q "N8N_AI_ANTHROPIC_KEY=sk-" .env 2>/dev/null; then
+              echo "✅ .env file contains valid API key format"
             else
-              echo "⚠️ WARNING: Cannot reach api.anthropic.com - checking DNS..."
-              nslookup api.anthropic.com || echo "DNS lookup failed"
+              echo "⚠️ WARNING: .env file may not contain a valid Anthropic API key"
+              echo "   Expected format: sk-ant-api03-..."
             fi
 
-            # 기존 컨테이너 로그 저장 (디버깅용)
-            docker logs groupe-n8n --tail 50 2>/dev/null || echo "No existing container logs"
+            # 호스트에서 네트워크 연결 테스트
+            echo ""
+            echo "🌐 Testing network connectivity from HOST..."
+
+            # DNS 해석 테스트
+            echo "   - DNS resolution test:"
+            if nslookup api.anthropic.com > /dev/null 2>&1; then
+              RESOLVED_IP=$(nslookup api.anthropic.com | grep -A1 'Name:' | grep 'Address:' | head -1 | awk '{print $2}')
+              echo "     ✅ api.anthropic.com resolves to: $RESOLVED_IP"
+            else
+              echo "     ❌ DNS resolution failed for api.anthropic.com"
+            fi
+
+            # HTTPS 연결 테스트
+            echo "   - HTTPS connection test:"
+            if curl -sI --connect-timeout 10 https://api.anthropic.com 2>/dev/null | head -1; then
+              echo "     ✅ HTTPS connection to api.anthropic.com: OK"
+            else
+              echo "     ❌ Cannot establish HTTPS connection to api.anthropic.com"
+            fi
+
+            # 기존 컨테이너 정보 저장
+            echo ""
+            echo "📦 Checking existing container..."
+            if docker ps -a | grep -q groupe-n8n; then
+              echo "   Existing container found, saving logs..."
+              docker logs groupe-n8n --tail 20 2>&1 | head -20 || true
+            else
+              echo "   No existing container found"
+            fi
 
             # 배포 실행
+            echo ""
             echo "🚀 Pulling latest image..."
             docker compose -f docker-compose.production.yml pull
 
+            echo ""
             echo "🔄 Recreating container..."
             docker compose -f docker-compose.production.yml up -d --force-recreate
 
-            # 컨테이너 시작 대기 및 상태 확인
-            echo "⏳ Waiting for container to start..."
-            sleep 10
+            # 컨테이너 시작 대기
+            echo ""
+            echo "⏳ Waiting for container to start (15 seconds)..."
+            sleep 15
 
+            # 컨테이너 상태 확인
+            echo ""
             echo "📊 Container status:"
-            docker ps | grep groupe-n8n
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "NAMES|groupe-n8n"
 
+            # 컨테이너 내부 환경변수 검증
+            echo ""
+            echo "🔍 Verifying container environment variables..."
+            CONTAINER_API_KEY=$(docker exec groupe-n8n printenv N8N_AI_ANTHROPIC_KEY 2>/dev/null || echo "")
+            if [ -n "$CONTAINER_API_KEY" ]; then
+              CONTAINER_KEY_LENGTH=${#CONTAINER_API_KEY}
+              echo "   ✅ N8N_AI_ANTHROPIC_KEY is set in container (length: $CONTAINER_KEY_LENGTH)"
+            else
+              echo "   ❌ N8N_AI_ANTHROPIC_KEY is NOT set in container!"
+            fi
+
+            docker exec groupe-n8n printenv | grep -E "^N8N_AI|^NODE_OPTIONS" | sed 's/=.*/=***/' || true
+
+            # 컨테이너 내부에서 네트워크 테스트
+            echo ""
+            echo "🌐 Testing network connectivity from CONTAINER..."
+
+            # 컨테이너 내부 DNS 테스트
+            echo "   - Container DNS resolution:"
+            if docker exec groupe-n8n nslookup api.anthropic.com > /dev/null 2>&1; then
+              echo "     ✅ Container can resolve api.anthropic.com"
+            else
+              echo "     ⚠️ Container DNS resolution may have issues"
+            fi
+
+            # 컨테이너 내부 HTTPS 연결 테스트
+            echo "   - Container HTTPS connection:"
+            if docker exec groupe-n8n curl -sI --connect-timeout 10 https://api.anthropic.com 2>/dev/null | head -1; then
+              echo "     ✅ Container can connect to api.anthropic.com"
+            else
+              echo "     ❌ Container cannot connect to api.anthropic.com"
+            fi
+
+            # 최근 컨테이너 로그
+            echo ""
             echo "📜 Recent container logs:"
+            echo "----------------------------------------"
             docker logs groupe-n8n --tail 30 2>&1
+
+            echo ""
+            echo "=========================================="
+            echo "✅ Deployment completed!"
+            echo "=========================================="
