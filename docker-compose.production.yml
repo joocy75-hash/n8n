@@ -10,11 +10,11 @@ services:
       - 8.8.4.4
     environment:
       # n8n 기본 설정
-      - N8N_HOST=141.164.55.245
+      - N8N_HOST=ai-n8n.shop
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - NODE_ENV=production
-      - WEBHOOK_URL=http://141.164.55.245/
+      - WEBHOOK_URL=http://ai-n8n.shop/
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Asia/Seoul
       # AI Workflow Builder 설정
