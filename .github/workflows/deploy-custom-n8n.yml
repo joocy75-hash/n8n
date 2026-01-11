@@ -141,6 +141,27 @@ jobs:
               echo "   No existing container found"
             fi
 
+            # 포트 80 사용 확인 및 해제
+            echo ""
+            echo "🔍 Checking port 80 availability..."
+            if lsof -i :80 2>/dev/null | grep -q LISTEN; then
+              echo "   ⚠️ Port 80 is in use, attempting to free it..."
+              # nginx가 사용 중이면 중지
+              if systemctl is-active --quiet nginx 2>/dev/null; then
+                echo "   Stopping nginx service..."
+                sudo systemctl stop nginx || true
+              fi
+              # 다른 컨테이너가 사용 중이면 중지
+              CONTAINER_USING_80=$(docker ps --filter "publish=80" --format "{{.Names}}" 2>/dev/null | head -1)
+              if [ -n "$CONTAINER_USING_80" ]; then
+                echo "   Stopping container using port 80: $CONTAINER_USING_80"
+                docker stop "$CONTAINER_USING_80" || true
+              fi
+              sleep 2
+            else
+              echo "   ✅ Port 80 is available"
+            fi
+
             # 배포 실행
             echo ""
             echo "🚀 Pulling latest image..."
