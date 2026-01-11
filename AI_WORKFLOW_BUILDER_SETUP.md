@@ -324,3 +324,118 @@ docker logs groupe-n8n --tail 100 -f
 ```
 
 이 가이드를 준수하여 운영 환경의 일관성을 유지해 주시기 바랍니다.
+
+---
+
+## 📋 인수인계 (2026-01-11)
+
+### 최근 주요 변경 사항
+
+#### 1. AI 모델 업그레이드: Claude Opus 4.5 Thinking
+
+**변경일**: 2026-01-11
+
+| 항목 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| 모델 | `claude-sonnet-4-5-20250514` | `claude-opus-4-5-20251101` |
+| Extended Thinking | 비활성화 | 활성화 (budget: 10,000 tokens) |
+| MAX_OUTPUT_TOKENS | 16,000 | 32,000 |
+
+**관련 파일:**
+- `packages/@n8n/ai-workflow-builder.ee/src/llm-config.ts` - `anthropicOpus45Thinking` 함수 추가
+- `packages/@n8n/ai-workflow-builder.ee/src/ai-workflow-builder-agent.service.ts` - 모델 함수 변경
+- `packages/@n8n/ai-workflow-builder.ee/src/constants.ts` - 토큰 제한 증가
+- `packages/cli/src/modules/chat-hub/chat-hub.constants.ts` - 모델 메타데이터 추가
+
+**Extended Thinking 설정:**
+```typescript
+// llm-config.ts
+thinking: {
+  type: 'enabled',
+  budget_tokens: 10000,
+}
+// 헤더: 'anthropic-beta': 'thinking-2025-04-30,prompt-caching-2024-07-31'
+// temperature: 1 (thinking 모드 필수)
+```
+
+#### 2. 도메인 설정: ai-n8n.shop
+
+**변경일**: 2026-01-11
+
+| 항목 | 설정 값 |
+|------|---------|
+| 도메인 | `ai-n8n.shop` |
+| DNS A 레코드 | `@` → `141.164.55.245` |
+| DNS A 레코드 | `www` → `141.164.55.245` |
+| 포트 매핑 | `80:5678` |
+
+**접속 URL**: http://ai-n8n.shop
+
+**관련 파일:**
+- `docker-compose.production.yml` - 포트 80:5678 매핑 추가
+- `nginx/ai-n8n.shop.conf` - nginx 설정 파일 (서버에 nginx 미설치로 현재 미사용)
+
+#### 3. 배포 스크립트 개선
+
+**변경일**: 2026-01-11
+
+`.github/workflows/deploy-custom-n8n.yml`에 다음 기능 추가:
+
+1. **포트 80 충돌 자동 해결**
+   - 배포 전 포트 80 사용 여부 확인
+   - nginx 서비스 자동 중지
+   - 다른 Docker 컨테이너 자동 중지
+
+2. **nginx 설정 자동 적용** (선택적)
+   - nginx가 설치된 경우 자동으로 리버스 프록시 설정
+   - `sites-available`, `sites-enabled` 디렉토리 자동 생성
+
+3. **도메인 접속 테스트**
+   - 배포 완료 후 도메인 접속 자동 테스트
+
+4. **컨테이너 내 curl 미존재 처리**
+   - curl이 없는 경우 네트워크 테스트 스킵
+
+### 현재 운영 환경 상태
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    운영 환경 현황                            │
+├─────────────────────────────────────────────────────────────┤
+│ 서버 IP        : 141.164.55.245                             │
+│ 도메인         : ai-n8n.shop                                │
+│ 컨테이너       : groupe-n8n                                 │
+│ 포트           : 80 (외부) → 5678 (내부)                    │
+│ AI 모델        : Claude Opus 4.5 Thinking                   │
+│ Extended Think : 활성화 (10K tokens budget)                 │
+│ HTTPS          : 미적용 (N8N_SECURE_COOKIE=false 필수)      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 향후 작업 권장 사항
+
+1. **HTTPS 적용**
+   - Let's Encrypt 인증서 발급
+   - nginx 또는 Traefik 리버스 프록시 설정
+   - `N8N_SECURE_COOKIE=true`로 변경
+
+2. **Extended Thinking 토큰 조정**
+   - 현재 10,000 tokens로 설정
+   - 복잡한 워크플로우 생성 시 증가 고려 (최대 100,000)
+   - 비용과 성능 간 트레이드오프 고려
+
+3. **모니터링 추가**
+   - API 사용량 모니터링
+   - 컨테이너 헬스체크 강화
+
+### 주의사항
+
+> ⚠️ **중요**: Extended Thinking 모드에서는 `temperature`가 반드시 `1`이어야 합니다.
+> 다른 값을 설정하면 API 오류가 발생합니다.
+
+> ⚠️ **중요**: 포트 80이 이미 사용 중인 경우 배포 스크립트가 자동으로 해제합니다.
+> 다른 서비스가 포트 80을 사용해야 한다면 docker-compose.production.yml에서 포트를 변경하세요.
+
+### 문의
+
+작업 관련 문의는 GitHub Issues 또는 프로젝트 담당자에게 연락하세요.
