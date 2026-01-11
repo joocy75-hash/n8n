@@ -185,12 +185,16 @@ jobs:
               echo "     ⚠️ Container DNS resolution may have issues"
             fi
 
-            # 컨테이너 내부 HTTPS 연결 테스트
+            # 컨테이너 내부 HTTPS 연결 테스트 (curl이 없으면 스킵)
             echo "   - Container HTTPS connection:"
-            if docker exec groupe-n8n curl -sI --connect-timeout 10 https://api.anthropic.com 2>/dev/null | head -1; then
-              echo "     ✅ Container can connect to api.anthropic.com"
+            if docker exec groupe-n8n which curl >/dev/null 2>&1; then
+              if docker exec groupe-n8n curl -sI --connect-timeout 10 https://api.anthropic.com 2>/dev/null | head -1; then
+                echo "     ✅ Container can connect to api.anthropic.com"
+              else
+                echo "     ⚠️ Container cannot connect to api.anthropic.com"
+              fi
             else
-              echo "     ❌ Container cannot connect to api.anthropic.com"
+              echo "     ⚠️ curl not available in container, skipping test"
             fi
 
             # 최근 컨테이너 로그
