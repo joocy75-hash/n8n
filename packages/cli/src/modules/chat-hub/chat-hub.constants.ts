@@ -130,6 +130,10 @@ const MODEL_METADATA_REGISTRY: Partial<
 		'claude-3-opus-latest': {
 			inputModalities: ['text', 'image'],
 		},
+		// Opus 4.5 with Extended Thinking support
+		'claude-opus-4-5-20251101': {
+			inputModalities: ['text', 'image'],
+		},
 	},
 	openai: {
 		'gpt-4o-mini-search-preview': { available: false },

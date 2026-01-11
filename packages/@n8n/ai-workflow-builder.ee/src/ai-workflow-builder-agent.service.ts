@@ -10,7 +10,7 @@ import { Client as TracingClient } from 'langsmith';
 import type { IUser, INodeTypeDescription, ITelemetryTrackProperties } from 'n8n-workflow';
 
 import { LLMServiceError } from '@/errors';
-import { anthropicClaudeSonnet45 } from '@/llm-config';
+import { anthropicOpus45Thinking } from '@/llm-config';
 import { SessionManagerService } from '@/session-manager.service';
 import {
 	BuilderFeatureFlags,
@@ -50,13 +50,12 @@ export class AiWorkflowBuilderService {
 		authHeaders?: Record<string, string>;
 		apiKey?: string;
 	} = {}): Promise<ChatAnthropic> {
-		return await anthropicClaudeSonnet45({
+		// Using Opus 4.5 with Extended Thinking for enhanced reasoning
+		return await anthropicOpus45Thinking({
 			baseUrl,
 			apiKey,
 			headers: {
 				...authHeaders,
-				// eslint-disable-next-line @typescript-eslint/naming-convention
-				'anthropic-beta': 'prompt-caching-2024-07-31',
 			},
 		});
 	}

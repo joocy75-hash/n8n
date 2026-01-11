@@ -6,9 +6,10 @@ export const MAX_AI_BUILDER_PROMPT_LENGTH = 5000; // characters
 
 /**
  * Token limits for the LLM context window.
+ * Updated for Opus 4.5 which supports 32K output tokens.
  */
 export const MAX_TOTAL_TOKENS = 200_000;
-export const MAX_OUTPUT_TOKENS = 16_000;
+export const MAX_OUTPUT_TOKENS = 32_000; // Opus 4.5 supports up to 32K output tokens
 export const MAX_INPUT_TOKENS = MAX_TOTAL_TOKENS - MAX_OUTPUT_TOKENS - 5_000;
 
 /**

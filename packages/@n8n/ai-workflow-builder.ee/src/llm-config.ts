@@ -101,3 +101,38 @@ export const anthropicHaiku45 = async (config: LLMProviderConfig) => {
 
 	return model;
 };
+
+export const anthropicOpus45Thinking = async (config: LLMProviderConfig) => {
+	const { ChatAnthropic } = await import('@langchain/anthropic');
+
+	// Opus 4.5 with Extended Thinking support
+	// Extended thinking requires temperature=1 and special beta header
+	const model = new ChatAnthropic({
+		model: 'claude-opus-4-5-20251101',
+		apiKey: config.apiKey,
+		temperature: 1, // Required for extended thinking
+		maxTokens: MAX_OUTPUT_TOKENS,
+		anthropicApiUrl: config.baseUrl,
+		clientOptions: {
+			defaultHeaders: {
+				...config.headers,
+				// Enable extended thinking beta feature
+				// eslint-disable-next-line @typescript-eslint/naming-convention
+				'anthropic-beta': 'thinking-2025-04-30,prompt-caching-2024-07-31',
+			},
+			fetchOptions: {
+				dispatcher: getProxyAgent(config.baseUrl),
+			},
+		},
+		// Extended thinking configuration
+		thinking: {
+			type: 'enabled',
+			budget_tokens: 10000, // Budget for thinking tokens
+		},
+	});
+
+	// Remove Langchain default topP parameter
+	delete model.topP;
+
+	return model;
+};
