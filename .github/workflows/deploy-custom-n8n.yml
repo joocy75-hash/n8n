@@ -55,13 +55,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Copy docker-compose.production.yml to server
+      - name: Copy deployment files to server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           password: ${{ secrets.REMOTE_PASSWORD }}
-          source: 'docker-compose.production.yml'
+          source: 'docker-compose.production.yml,nginx/'
           target: '/root/group_e/'
 
       - name: Execute deployment script on server
@@ -199,7 +199,41 @@ jobs:
             echo "----------------------------------------"
             docker logs groupe-n8n --tail 30 2>&1
 
+            # Nginx 설정 적용
+            echo ""
+            echo "🌐 Configuring Nginx reverse proxy..."
+
+            # nginx 설정 파일 복사
+            if [ -f "/root/group_e/nginx/ai-n8n.shop.conf" ]; then
+              sudo cp /root/group_e/nginx/ai-n8n.shop.conf /etc/nginx/sites-available/ai-n8n.shop
+
+              # 심볼릭 링크 생성 (이미 있으면 덮어쓰기)
+              sudo ln -sf /etc/nginx/sites-available/ai-n8n.shop /etc/nginx/sites-enabled/ai-n8n.shop
+
+              # nginx 설정 테스트
+              if sudo nginx -t 2>&1; then
+                echo "   ✅ Nginx configuration is valid"
+                sudo systemctl reload nginx
+                echo "   ✅ Nginx reloaded successfully"
+              else
+                echo "   ❌ Nginx configuration test failed"
+              fi
+            else
+              echo "   ⚠️ Nginx config file not found, skipping..."
+            fi
+
+            # 도메인 접속 테스트
+            echo ""
+            echo "🔗 Testing domain access..."
+            sleep 3
+            if curl -sI --connect-timeout 10 http://ai-n8n.shop 2>/dev/null | head -1 | grep -q "200\|302"; then
+              echo "   ✅ http://ai-n8n.shop is accessible!"
+            else
+              echo "   ⚠️ Domain may not be accessible yet (DNS propagation may take time)"
+            fi
+
             echo ""
             echo "=========================================="
             echo "✅ Deployment completed!"
+            echo "🌐 Access: http://ai-n8n.shop"
             echo "=========================================="
