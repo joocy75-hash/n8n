@@ -207,23 +207,38 @@ jobs:
             echo ""
             echo "🌐 Configuring Nginx reverse proxy..."
 
-            # nginx 설정 파일 복사
-            if [ -f "/root/group_e/nginx/ai-n8n.shop.conf" ]; then
-              sudo cp /root/group_e/nginx/ai-n8n.shop.conf /etc/nginx/sites-available/ai-n8n.shop
+            # nginx가 설치되어 있는지 확인
+            if command -v nginx &> /dev/null; then
+              # nginx 설정 파일 복사
+              if [ -f "/root/group_e/nginx/ai-n8n.shop.conf" ]; then
+                # sites-available 디렉토리 생성 (없으면)
+                sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 
-              # 심볼릭 링크 생성 (이미 있으면 덮어쓰기)
-              sudo ln -sf /etc/nginx/sites-available/ai-n8n.shop /etc/nginx/sites-enabled/ai-n8n.shop
+                sudo cp /root/group_e/nginx/ai-n8n.shop.conf /etc/nginx/sites-available/ai-n8n.shop
 
-              # nginx 설정 테스트
-              if sudo nginx -t 2>&1; then
-                echo "   ✅ Nginx configuration is valid"
-                sudo systemctl reload nginx
-                echo "   ✅ Nginx reloaded successfully"
+                # 심볼릭 링크 생성 (이미 있으면 덮어쓰기)
+                sudo ln -sf /etc/nginx/sites-available/ai-n8n.shop /etc/nginx/sites-enabled/ai-n8n.shop
+
+                # nginx.conf에 sites-enabled include 확인 및 추가
+                if ! grep -q "include /etc/nginx/sites-enabled" /etc/nginx/nginx.conf 2>/dev/null; then
+                  echo "   Adding sites-enabled include to nginx.conf..."
+                  sudo sed -i '/http {/a\    include /etc/nginx/sites-enabled/*;' /etc/nginx/nginx.conf 2>/dev/null || true
+                fi
+
+                # nginx 설정 테스트
+                if sudo nginx -t 2>&1; then
+                  echo "   ✅ Nginx configuration is valid"
+                  sudo systemctl reload nginx || sudo nginx -s reload
+                  echo "   ✅ Nginx reloaded successfully"
+                else
+                  echo "   ⚠️ Nginx configuration test failed, check manually"
+                fi
               else
-                echo "   ❌ Nginx configuration test failed"
+                echo "   ⚠️ Nginx config file not found, skipping..."
               fi
             else
-              echo "   ⚠️ Nginx config file not found, skipping..."
+              echo "   ⚠️ Nginx not installed, skipping reverse proxy setup"
+              echo "   💡 n8n is accessible at: http://141.164.55.245:5678"
             fi
 
             # 도메인 접속 테스트
